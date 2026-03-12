@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Tu tiempo es oro</title>
+    <meta
+      name="description"
+      content="Calcula cuántas horas de tu vida cuestan tus suscripciones."
+    />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#020617" />
+
+    <!-- iOS standalone / PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Life-Cost" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              background: "#020617",
+              surface: "#020617",
+              surfaceSoft: "#020617",
+              accent: {
+                500: "#38bdf8",
+                600: "#0ea5e9",
+              },
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+            boxShadow: {
+              'soft-lg':
+                "0 18px 45px rgba(15,23,42,0.85), 0 0 0 1px rgba(15,23,42,1)",
+            },
+            transitionTimingFunction: {
+              'smooth-bounce': "cubic-bezier(0.22, 0.61, 0.36, 1)",
+            },
+            backdropBlur: {
+              xs: "2px",
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body
+    class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center px-4 py-10 font-sans"
+  >
+    <div
+      class="w-full max-w-6xl mx-auto bg-gradient-to-br from-slate-950/95 via-slate-900/95 to-slate-950/95 border border-slate-800/80 rounded-[28px] shadow-soft-lg backdrop-blur-md relative overflow-hidden"
+    >
+      <div class="pointer-events-none absolute inset-0 opacity-40">
+        <div class="absolute -top-32 -right-10 h-72 w-72 rounded-full bg-sky-500/15 blur-3xl"></div>
+        <div class="absolute -bottom-40 -left-16 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl"></div>
+      </div>
+
+      <header
+        class="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-slate-800/70 px-6 sm:px-10 py-6"
+      >
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight leading-tight">
+            ¿Vale tu Tiempo?
+          </h1>
+          <p class="text-slate-400 text-sm sm:text-base mt-1 max-w-xl">
+            Descubre cuántas horas de tu vida estás invirtiendo en tus
+            suscripciones cada mes.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="hidden sm:flex items-center gap-2 text-sm text-slate-400">
+            <span
+              class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/30 text-xs"
+              >β</span
+            >
+            <span>PWA Ready</span>
+          </div>
+          <button
+            id="installButton"
+            class="hidden items-center gap-2 rounded-full border border-slate-700/80 bg-slate-900/70 px-4 py-2 text-xs sm:text-sm font-medium text-slate-100 shadow-sm shadow-slate-900/60 hover:border-sky-500 hover:bg-slate-900/90 hover:shadow-sky-500/25 hover:shadow-lg transition duration-200 ease-smooth-bounce"
+          >
+            <span
+              class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/40"
+              >+</span
+            >
+            Instalar app
+          </button>
+        </div>
+      </header>
+
+      <main class="relative grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-6 sm:gap-8 p-6 sm:p-10">
+        <!-- Columna izquierda: formulario y lista -->
+        <section class="space-y-6">
+          <!-- Bloque sueldo -->
+          <div
+            class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-5 sm:p-6 shadow-inner shadow-slate-950/70 backdrop-blur-xs transition duration-200 hover:border-sky-500/60 hover:-translate-y-[1px]"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h2 class="text-base sm:text-lg font-semibold">
+                  Tu valor hora
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                  Introduce tu sueldo neto mensual y cuántas horas al día
+                  trabajas. Calcularemos automáticamente tus horas mensuales y
+                  lo que vale una hora de tu tiempo.
+                </p>
+              </div>
+              <div
+                class="inline-flex items-center gap-2 rounded-full bg-sky-500/10 border border-sky-500/30 px-3 py-1 text-xs text-sky-300"
+              >
+                <span class="h-1.5 w-1.5 rounded-full bg-sky-400"></span>
+                Datos solo en tu dispositivo
+              </div>
+            </div>
+
+            <form id="salaryForm" class="mt-5 grid sm:grid-cols-4 gap-3 sm:gap-4">
+              <div class="sm:col-span-1">
+                <label
+                  for="netSalary"
+                  class="block text-xs font-medium text-slate-300 mb-1.5"
+                  >Sueldo neto mensual</label
+                >
+                <div
+                  class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500/60 transition duration-150"
+                >
+                  <span class="text-slate-500 text-sm">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="netSalary"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-slate-600"
+                    placeholder="Ej. 1800"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="sm:col-span-1">
+                <label
+                  for="dailyHours"
+                  class="block text-xs font-medium text-slate-300 mb-1.5"
+                  >Horas trabajadas al día</label
+                >
+                <div
+                  class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500/60 transition duration-150"
+                >
+                  <span class="text-slate-500 text-sm">⏱</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    id="dailyHours"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-slate-600"
+                    placeholder="Ej. 8"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="sm:col-span-1">
+                <label
+                  for="workingDays"
+                  class="block text-xs font-medium text-slate-300 mb-1.5"
+                  >Días trabajados al mes</label
+                >
+                <div
+                  class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2.5 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500/60 transition"
+                >
+                  <span class="text-slate-500 text-sm">📅</span>
+                  <input
+                    type="number"
+                    step="1"
+                    min="1"
+                    max="31"
+                    id="workingDays"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-slate-600"
+                    placeholder="Ej. 22"
+                  />
+                </div>
+                <p class="mt-1 text-[10px] text-slate-500">
+                  Si lo dejas vacío, usaremos <span class="font-medium">22 días/mes</span>.
+                </p>
+              </div>
+
+              <div class="sm:col-span-1 flex flex-col justify-end gap-3">
+                <button
+                  type="submit"
+                  class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-medium text-slate-950 shadow-lg shadow-sky-500/30 hover:bg-sky-400 hover:shadow-sky-400/30 hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition duration-150 ease-smooth-bounce"
+                >
+                  Actualizar valor hora
+                </button>
+                <p
+                  id="hourlyRateDisplay"
+                  class="text-xs text-slate-400 text-center sm:text-left"
+                >
+                  Valor hora: <span class="text-slate-500">–</span>
+                </p>
+              </div>
+            </form>
+          </div>
+
+          <!-- Bloque suscripciones -->
+          <div
+            class="rounded-2xl border border-slate-800/80 bg-slate-900/80 p-5 sm:p-6 shadow-inner shadow-slate-950/70 space-y-5 backdrop-blur-xs transition duration-200 hover:border-sky-500/60 hover:-translate-y-[1px]"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base sm:text-lg font-semibold">
+                  Tus suscripciones
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                  Añade tus suscripciones mensuales. Verás cuántas horas de
+                  trabajo representan cada una.
+                </p>
+              </div>
+            </div>
+
+            <form
+              id="subscriptionForm"
+              class="grid sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] gap-3 sm:gap-4"
+            >
+              <div>
+                <label
+                  for="subscriptionName"
+                  class="block text-xs font-medium text-slate-300 mb-1.5"
+                  >Nombre</label
+                >
+                <input
+                  type="text"
+                  id="subscriptionName"
+                  class="w-full rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm outline-none placeholder:text-slate-600 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/60 transition duration-150"
+                  placeholder="Ej. Netflix, Spotify..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  for="subscriptionCost"
+                  class="block text-xs font-medium text-slate-300 mb-1.5"
+                  >Coste mensual</label
+                >
+                <div
+                  class="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/70 px-3 py-2.5 focus-within:border-sky-500 focus-within:ring-1 focus-within:ring-sky-500/60 transition duration-150"
+                >
+                  <span class="text-slate-500 text-sm">€</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="subscriptionCost"
+                    class="w-full bg-transparent text-sm outline-none placeholder:text-slate-600"
+                    placeholder="Ej. 12.99"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="flex items-end">
+                <button
+                  type="submit"
+                  class="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-slate-100 text-slate-900 px-4 py-2.5 text-sm font-medium shadow-lg shadow-slate-900/70 hover:bg-white hover:-translate-y-[1px] active:translate-y-0 active:shadow-none transition duration-150 ease-smooth-bounce"
+                >
+                  <span class="text-lg leading-none">+</span>
+                  <span class="hidden sm:inline">Añadir</span>
+                  <span class="sm:hidden">Añad.</span>
+                </button>
+              </div>
+            </form>
+
+            <div class="space-y-3 max-h-72 overflow-y-auto pr-1 custom-scroll">
+              <template id="subscriptionRowTemplate">
+                <div
+                  class="group flex items-center justify-between gap-3 rounded-xl border border-slate-800/80 bg-slate-950/70 px-4 py-3 hover:border-sky-500/60 hover:bg-slate-900 transition duration-150 ease-smooth-bounce"
+                  data-subscription-row
+                >
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2">
+                      <p
+                        class="font-medium text-sm truncate"
+                        data-subscription-name
+                      ></p>
+                      <span
+                        class="inline-flex items-center rounded-full bg-slate-800/90 px-2 py-0.5 text-[10px] font-medium text-slate-300 border border-slate-700/80"
+                        data-subscription-cost
+                      ></span>
+                    </div>
+                    <p
+                      class="mt-1 text-xs text-slate-400"
+                      data-subscription-hours
+                    ></p>
+                  </div>
+                  <button
+                    type="button"
+                    class="opacity-40 group-hover:opacity-100 text-slate-500 hover:text-red-400 transition"
+                    data-subscription-delete
+                    aria-label="Eliminar suscripción"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </template>
+
+              <div
+                id="subscriptionsEmptyState"
+                class="flex items-center gap-3 rounded-xl border border-dashed border-slate-800/80 bg-slate-950/40 px-4 py-3 text-xs text-slate-500"
+              >
+                <span
+                  class="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-700 bg-slate-900/80 text-slate-500 text-sm"
+                  >+</span
+                >
+                <p>
+                  Aún no has añadido suscripciones. Empieza con tus plataformas
+                  de streaming, gimnasio, apps, etc.
+                </p>
+              </div>
+
+              <div id="subscriptionsList" class="space-y-3 hidden"></div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <p
+                id="totalCostDisplay"
+                class="text-xs sm:text-sm text-slate-300"
+              >
+                Total mensual: <span class="font-medium text-slate-100">0,00 €</span>
+              </p>
+              <p
+                id="totalHoursDisplay"
+                class="text-xs sm:text-sm text-slate-400"
+              >
+                Te cuestan
+                <span class="font-semibold text-sky-300">0h 00min</span>
+                de tu vida cada mes.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Columna derecha: gráfico y resumen -->
+        <section
+          class="rounded-2xl border border-slate-800/80 bg-slate-950/80 p-5 sm:p-6 flex flex-col justify-between gap-4 shadow-inner shadow-slate-950/90 backdrop-blur-xs transition duration-200 hover:border-sky-500/60 hover:-translate-y-[1px]"
+        >
+          <div class="space-y-4">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h2 class="text-base sm:text-lg font-semibold">
+                  Mapa de tus horas
+                </h2>
+                <p class="text-xs sm:text-sm text-slate-400 mt-1">
+                  Visualiza qué porcentaje de tu tiempo de trabajo se va en cada
+                  suscripción.
+                </p>
+              </div>
+              <div
+                class="inline-flex items-center gap-2 rounded-full bg-slate-900/90 border border-slate-800/90 px-3 py-1 text-[10px] text-slate-400"
+              >
+                <span
+                  class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400"
+                ></span>
+                <span>Tiempo invertido</span>
+              </div>
+            </div>
+
+            <div
+              class="relative flex items-center justify-center rounded-2xl border border-slate-800 bg-slate-950/80 px-3 py-4 sm:px-4 sm:py-6 overflow-hidden"
+            >
+              <div class="w-full max-w-xs mx-auto">
+                <canvas id="subscriptionsChart" aria-label="Gráfico de tiempos por suscripción"></canvas>
+              </div>
+              <div class="pointer-events-none absolute inset-0 opacity-40 mix-blend-screen">
+                <div class="absolute -top-10 right-4 h-20 w-20 rounded-full bg-sky-500/20 blur-2xl"></div>
+                <div class="absolute bottom-0 left-3 h-16 w-16 rounded-full bg-emerald-500/10 blur-2xl"></div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="mt-1 rounded-xl border border-slate-800 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-slate-900/70 px-4 py-3 text-xs sm:text-sm text-slate-300"
+          >
+            <p id="insightText">
+              Añade tus suscripciones y te contaremos qué parte de tu vida se
+              esconde en cada pago recurrente.
+            </p>
+          </div>
+        </section>
+      </main>
+
+      <footer
+        class="relative px-6 sm:px-10 py-4 border-t border-slate-900/80 text-[11px] sm:text-xs text-slate-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2"
+      >
+        <p>
+          Tus datos se guardan localmente en este dispositivo (localStorage). No
+          se envían a ningún servidor.
+        </p>
+        <p>Optimizada para modo oscuro y lista para instalar como PWA.</p>
+      </footer>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
+
